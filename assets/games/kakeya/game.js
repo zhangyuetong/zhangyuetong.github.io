@@ -16,7 +16,7 @@
 
   var ANGLE_BINS = 180;
   var GRID_CELL = 1;
-  var STICK_WIDTH = 6;
+  var STICK_WIDTH = 1;
   var STORAGE_KEY = "kakeya-best-kappa";
   var LEGACY_STORAGE_KEY = "kakeya-best-area";
 
@@ -180,47 +180,27 @@
     }
   }
 
-  function markDisc(cx, cy, radius) {
-    var minCol = Math.max(0, Math.floor(cx - radius));
-    var maxCol = Math.min(gridCols - 1, Math.floor(cx + radius));
-    var minRow = Math.max(0, Math.floor(cy - radius));
-    var maxRow = Math.min(gridRows - 1, Math.floor(cy + radius));
-    var radiusSq = radius * radius;
-
-    for (var row = minRow; row <= maxRow; row++) {
-      for (var col = minCol; col <= maxCol; col++) {
-        var dx = col + 0.5 - cx;
-        var dy = row + 0.5 - cy;
-        if (dx * dx + dy * dy <= radiusSq) {
-          markCell(col, row);
-        }
-      }
-    }
-  }
-
-  function markSegment(x1, y1, x2, y2, widthPx) {
+  function markLine(x1, y1, x2, y2) {
     var dx = x2 - x1;
     var dy = y2 - y1;
     var len = Math.hypot(dx, dy);
     if (len < 0.001) {
-      markDisc(x1, y1, widthPx / 2);
+      markCell(Math.round(x1), Math.round(y1));
       return;
     }
 
-    var steps = Math.max(2, Math.ceil(len / 0.5));
-    var half = widthPx / 2;
-
+    var steps = Math.max(1, Math.ceil(len));
     for (var i = 0; i <= steps; i++) {
       var t = i / steps;
-      markDisc(x1 + dx * t, y1 + dy * t, half);
+      markCell(Math.round(x1 + dx * t), Math.round(y1 + dy * t));
     }
   }
 
   function markStickSweep(from, to) {
     if (from) {
-      markSegment(from.x1, from.y1, from.x2, from.y2, STICK_WIDTH);
+      markLine(from.x1, from.y1, from.x2, from.y2);
     }
-    markSegment(to.x1, to.y1, to.x2, to.y2, STICK_WIDTH);
+    markLine(to.x1, to.y1, to.x2, to.y2);
   }
 
   function markAngleBin(angle) {
@@ -355,22 +335,14 @@
     ctx.restore();
 
     ctx.save();
-    ctx.lineCap = "round";
+    ctx.lineCap = "butt";
     ctx.lineWidth = STICK_WIDTH;
     ctx.strokeStyle = "#38bdf8";
-    ctx.shadowColor = "rgba(56, 189, 248, 0.55)";
-    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.moveTo(stick.x1, stick.y1);
     ctx.lineTo(stick.x2, stick.y2);
     ctx.stroke();
     ctx.restore();
-
-    ctx.fillStyle = "#7dd3fc";
-    ctx.beginPath();
-    ctx.arc(stick.x1, stick.y1, 7, 0, Math.PI * 2);
-    ctx.arc(stick.x2, stick.y2, 7, 0, Math.PI * 2);
-    ctx.fill();
 
     if (playing && pointers.size < 2) {
       ctx.fillStyle = "rgba(12, 15, 22, 0.55)";
