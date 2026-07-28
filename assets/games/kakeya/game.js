@@ -48,18 +48,23 @@
   };
 
   var prevStick = null;
-  var stickActive = false;
-
-  function normalizeDirected(angle) {
-    return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  }
 
   function toUndirected(angle) {
-    var directed = normalizeDirected(angle);
+    var twoPi = Math.PI * 2;
+    var directed = ((angle % twoPi) + twoPi) % twoPi;
     if (directed >= Math.PI) {
       directed -= Math.PI;
     }
     return directed;
+  }
+
+  function readStickDirection() {
+    var dx = stick.x2 - stick.x1;
+    var dy = stick.y2 - stick.y1;
+    if (Math.hypot(dx, dy) < 0.001) {
+      return stick.angle;
+    }
+    return toUndirected(Math.atan2(dy, dx));
   }
 
   function loadBest() {
@@ -107,7 +112,7 @@
 
   function updateScoreDisplay() {
     areaEl.textContent = formatKappa(areaCoefficient());
-    progressEl.textContent = Math.round((visitedCount / ANGLE_BINS) * 100) + "%";
+    progressEl.textContent = visitedCount + " / " + ANGLE_BINS;
   }
 
   function resize() {
@@ -140,7 +145,6 @@
     sweptCells = 0;
     completed = false;
     prevStick = null;
-    stickActive = false;
 
     sweepCtx.clearRect(0, 0, gridCols, gridRows);
 
@@ -205,8 +209,8 @@
     markLine(to.x1, to.y1, to.x2, to.y2);
   }
 
-  function markAngleBinUndirected(undirected) {
-    var u = ((undirected % Math.PI) + Math.PI) % Math.PI;
+  function markDirectionCoverage(undirected) {
+    var u = toUndirected(undirected);
     var bin = Math.min(
       ANGLE_BINS - 1,
       Math.floor((u / Math.PI) * ANGLE_BINS)
@@ -217,28 +221,8 @@
     }
   }
 
-  function markAngleArc(uFrom, uTo) {
-    var delta = uTo - uFrom;
-
-    if (delta > Math.PI / 2) {
-      delta -= Math.PI;
-    } else if (delta < -Math.PI / 2) {
-      delta += Math.PI;
-    }
-
-    var step = Math.PI / ANGLE_BINS / 2;
-    var steps = Math.max(1, Math.ceil(Math.abs(delta) / step));
-
-    for (var i = 0; i <= steps; i++) {
-      var t = i / steps;
-      var u = uFrom + delta * t;
-      if (u < 0) {
-        u += Math.PI;
-      } else if (u >= Math.PI) {
-        u -= Math.PI;
-      }
-      markAngleBinUndirected(u);
-    }
+  function allDirectionsCovered() {
+    return visitedCount >= ANGLE_BINS;
   }
 
   function currentArea() {
@@ -280,11 +264,8 @@
     var pts = Array.from(pointers.values());
     var mx = (pts[0].x + pts[1].x) / 2;
     var my = (pts[0].y + pts[1].y) / 2;
-    var angle = toUndirected(
-      Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x)
-    );
+    var fingerAngle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
     var half = stickLength / 2;
-    var directed = angle;
 
     prevStick = {
       x1: stick.x1,
@@ -294,24 +275,18 @@
       angle: stick.angle
     };
 
-    stick.x1 = mx - Math.cos(directed) * half;
-    stick.y1 = my - Math.sin(directed) * half;
-    stick.x2 = mx + Math.cos(directed) * half;
-    stick.y2 = my + Math.sin(directed) * half;
-    stick.angle = angle;
+    stick.x1 = mx - Math.cos(fingerAngle) * half;
+    stick.y1 = my - Math.sin(fingerAngle) * half;
+    stick.x2 = mx + Math.cos(fingerAngle) * half;
+    stick.y2 = my + Math.sin(fingerAngle) * half;
+    stick.angle = readStickDirection();
 
     markStickSweep(prevStick, stick);
-
-    if (stickActive) {
-      markAngleArc(prevStick.angle, stick.angle);
-    } else {
-      markAngleBinUndirected(stick.angle);
-      stickActive = true;
-    }
+    markDirectionCoverage(stick.angle);
 
     updateScoreDisplay();
 
-    if (!completed && visitedCount >= ANGLE_BINS) {
+    if (!completed && allDirectionsCovered()) {
       finishRound();
     }
 
@@ -392,9 +367,6 @@
 
   function pointerUp(event) {
     pointers.delete(event.pointerId);
-    if (pointers.size < 2) {
-      stickActive = false;
-    }
     try {
       canvas.releasePointerCapture(event.pointerId);
     } catch (err) {
