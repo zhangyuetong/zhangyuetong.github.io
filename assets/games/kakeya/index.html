@@ -12,15 +12,19 @@
 
     <div class="hud">
       <div class="hud-row">
-        <span class="label">扫过面积</span>
-        <span id="area" class="value">0</span>
+        <span class="label">面积系数 κ</span>
+        <span id="area" class="value">0.00</span>
       </div>
       <div class="hud-row">
-        <span class="label">方向进度</span>
+        <span class="label">方向覆盖</span>
         <span id="progress" class="value">0%</span>
       </div>
+      <div class="hud-row">
+        <span class="label">经典 deltoid</span>
+        <span class="value ref">0.39</span>
+      </div>
       <div class="hud-row best-row">
-        <span class="label">最佳记录</span>
+        <span class="label">最佳 κ</span>
         <span id="best" class="value">—</span>
       </div>
     </div>
@@ -31,10 +35,10 @@
         <p class="subtitle">挂谷集 · needle problem</p>
         <p class="instructions">
           用<strong>两根手指</strong>按住屏幕操作一根棍子，<br>
-          让棍子的方向<strong>转满一圈</strong>，<br>
+          让棍子经过<strong>所有方向</strong>（正反算同一方向，转半圈即可），<br>
           同时尽量减小棍子扫过的总面积。
         </p>
-        <p class="tip">双指位置决定棍子的位置与朝向</p>
+        <p class="tip">双指位置决定棍子的位置与朝向 · 分数 κ = 面积 / L²</p>
         <button id="start-btn" type="button">开始</button>
       </div>
     </div>
@@ -42,7 +46,25 @@
     <div id="complete" class="overlay hidden">
       <div class="panel">
         <h1>完成！</h1>
-        <p class="result">扫过面积：<strong id="final-area">0</strong></p>
+        <p class="result">你的 κ = <strong id="final-kappa">0.00</strong></p>
+        <div class="compare-table">
+          <div class="compare-row" id="compare-deltoid">
+            <span class="compare-name">Deltoid 构造</span>
+            <span class="compare-value">0.39</span>
+            <span class="compare-note">凸 Kakeya 最优</span>
+          </div>
+          <div class="compare-row" id="compare-semicircle">
+            <span class="compare-name">定点半圆</span>
+            <span class="compare-value">0.79</span>
+            <span class="compare-note">朴素旋转</span>
+          </div>
+          <div class="compare-row" id="compare-besicovitch">
+            <span class="compare-name">Besicovitch 集</span>
+            <span class="compare-value">→ 0</span>
+            <span class="compare-note">理论下界</span>
+          </div>
+        </div>
+        <p id="compare-msg" class="compare-msg"></p>
         <p id="record-msg" class="record-msg hidden">新纪录！</p>
         <button id="retry-btn" type="button">再试一次</button>
       </div>

@@ -8,15 +8,20 @@
   var bestEl = document.getElementById("best");
   var overlayEl = document.getElementById("overlay");
   var completeEl = document.getElementById("complete");
-  var finalAreaEl = document.getElementById("final-area");
+  var finalKappaEl = document.getElementById("final-kappa");
+  var compareMsgEl = document.getElementById("compare-msg");
   var recordMsgEl = document.getElementById("record-msg");
   var startBtn = document.getElementById("start-btn");
   var retryBtn = document.getElementById("retry-btn");
 
-  var ANGLE_BINS = 360;
-  var GRID_CELL = 3;
+  var ANGLE_BINS = 180;
+  var GRID_CELL = 1;
   var STICK_WIDTH = 6;
-  var STORAGE_KEY = "kakeya-best-area";
+  var STORAGE_KEY = "kakeya-best-kappa";
+  var LEGACY_STORAGE_KEY = "kakeya-best-area";
+
+  var KAPPA_DELTOID = Math.PI / 8;
+  var KAPPA_SEMICIRCLE = Math.PI / 4;
 
   var width = 0;
   var height = 0;
@@ -44,26 +49,64 @@
 
   var prevStick = null;
 
+  function normalizeDirected(angle) {
+    return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  }
+
+  function toUndirected(angle) {
+    var directed = normalizeDirected(angle);
+    if (directed >= Math.PI) {
+      directed -= Math.PI;
+    }
+    return directed;
+  }
+
   function loadBest() {
     var raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === null) {
-      return null;
+    if (raw !== null) {
+      var value = parseFloat(raw);
+      if (isFinite(value)) {
+        return value;
+      }
     }
-    var value = parseFloat(raw);
-    return isFinite(value) ? value : null;
+
+    var legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw !== null && stickLength > 0) {
+      var legacyArea = parseFloat(legacyRaw);
+      if (isFinite(legacyArea)) {
+        var migrated = legacyArea / (stickLength * stickLength);
+        saveBest(migrated);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        return migrated;
+      }
+    }
+
+    return null;
   }
 
   function saveBest(value) {
     localStorage.setItem(STORAGE_KEY, String(value));
   }
 
-  function formatArea(value) {
-    return value.toFixed(1);
+  function formatKappa(value) {
+    return value.toFixed(2);
+  }
+
+  function areaCoefficient() {
+    if (stickLength <= 0) {
+      return 0;
+    }
+    return currentArea() / (stickLength * stickLength);
   }
 
   function updateBestDisplay() {
     var best = loadBest();
-    bestEl.textContent = best === null ? "—" : formatArea(best);
+    bestEl.textContent = best === null ? "—" : formatKappa(best);
+  }
+
+  function updateScoreDisplay() {
+    areaEl.textContent = formatKappa(areaCoefficient());
+    progressEl.textContent = Math.round((visitedCount / ANGLE_BINS) * 100) + "%";
   }
 
   function resize() {
@@ -107,8 +150,7 @@
     stick.y2 = cy;
     stick.angle = 0;
 
-    areaEl.textContent = "0";
-    progressEl.textContent = "0%";
+    updateScoreDisplay();
 
     if (!keepPlaying) {
       playing = false;
@@ -125,28 +167,32 @@
     return row * gridCols + col;
   }
 
+  function markCell(col, row) {
+    if (col < 0 || row < 0 || col >= gridCols || row >= gridRows) {
+      return;
+    }
+    var idx = gridIndex(col, row);
+    if (grid[idx] === 0) {
+      grid[idx] = 1;
+      sweptCells += 1;
+      sweepCtx.fillStyle = "#38bdf8";
+      sweepCtx.fillRect(col, row, 1, 1);
+    }
+  }
+
   function markDisc(cx, cy, radius) {
-    var minCol = Math.max(0, Math.floor((cx - radius) / GRID_CELL));
-    var maxCol = Math.min(gridCols - 1, Math.floor((cx + radius) / GRID_CELL));
-    var minRow = Math.max(0, Math.floor((cy - radius) / GRID_CELL));
-    var maxRow = Math.min(gridRows - 1, Math.floor((cy + radius) / GRID_CELL));
+    var minCol = Math.max(0, Math.floor(cx - radius));
+    var maxCol = Math.min(gridCols - 1, Math.floor(cx + radius));
+    var minRow = Math.max(0, Math.floor(cy - radius));
+    var maxRow = Math.min(gridRows - 1, Math.floor(cy + radius));
     var radiusSq = radius * radius;
 
     for (var row = minRow; row <= maxRow; row++) {
       for (var col = minCol; col <= maxCol; col++) {
-        var px = (col + 0.5) * GRID_CELL;
-        var py = (row + 0.5) * GRID_CELL;
-        var dx = px - cx;
-        var dy = py - cy;
-        if (dx * dx + dy * dy > radiusSq) {
-          continue;
-        }
-        var idx = gridIndex(col, row);
-        if (grid[idx] === 0) {
-          grid[idx] = 1;
-          sweptCells += 1;
-          sweepCtx.fillStyle = "#fff";
-          sweepCtx.fillRect(col, row, 1, 1);
+        var dx = col + 0.5 - cx;
+        var dy = row + 0.5 - cy;
+        if (dx * dx + dy * dy <= radiusSq) {
+          markCell(col, row);
         }
       }
     }
@@ -161,7 +207,7 @@
       return;
     }
 
-    var steps = Math.max(2, Math.ceil(len / (GRID_CELL * 0.5)));
+    var steps = Math.max(2, Math.ceil(len / 0.5));
     var half = widthPx / 2;
 
     for (var i = 0; i <= steps; i++) {
@@ -177,17 +223,67 @@
     markSegment(to.x1, to.y1, to.x2, to.y2, STICK_WIDTH);
   }
 
-  function markAngle(angle) {
-    var normalized = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    var bin = Math.floor((normalized / (Math.PI * 2)) * ANGLE_BINS) % ANGLE_BINS;
+  function markAngleBin(angle) {
+    var undirected = toUndirected(angle);
+    var bin = Math.min(
+      ANGLE_BINS - 1,
+      Math.floor((undirected / Math.PI) * ANGLE_BINS)
+    );
     if (angleVisited[bin] === 0) {
       angleVisited[bin] = 1;
       visitedCount += 1;
     }
   }
 
+  function markAngleArc(fromDirected, toDirected) {
+    var from = normalizeDirected(fromDirected);
+    var to = normalizeDirected(toDirected);
+    var delta = to - from;
+
+    if (delta > Math.PI) {
+      delta -= Math.PI * 2;
+    } else if (delta < -Math.PI) {
+      delta += Math.PI * 2;
+    }
+
+    var step = Math.PI / ANGLE_BINS / 2;
+    var steps = Math.max(1, Math.ceil(Math.abs(delta) / step));
+
+    for (var i = 0; i <= steps; i++) {
+      var t = i / steps;
+      markAngleBin(from + delta * t);
+    }
+  }
+
   function currentArea() {
     return sweptCells * GRID_CELL * GRID_CELL;
+  }
+
+  function compareMessage(kappa) {
+    if (kappa < KAPPA_DELTOID) {
+      return "超越凸 Kakeya 最优！";
+    }
+    if (kappa < KAPPA_SEMICIRCLE) {
+      return "接近经典 deltoid 构造，继续优化！";
+    }
+    return "面积大于定点半圆旋转，试试更紧凑的路径。";
+  }
+
+  function highlightCompareRow(kappa) {
+    var rows = document.querySelectorAll(".compare-row");
+    rows.forEach(function (row) {
+      row.classList.remove("compare-row--highlight");
+    });
+
+    var targetId = "compare-semicircle";
+    if (kappa < KAPPA_SEMICIRCLE) {
+      targetId = "compare-deltoid";
+    }
+
+    var target = document.getElementById(targetId);
+    if (target) {
+      target.classList.add("compare-row--highlight");
+    }
   }
 
   function updateStickFromPointers() {
@@ -216,10 +312,9 @@
     stick.angle = angle;
 
     markStickSweep(prevStick, stick);
-    markAngle(angle);
+    markAngleArc(prevStick.angle, stick.angle);
 
-    areaEl.textContent = formatArea(currentArea());
-    progressEl.textContent = Math.round((visitedCount / ANGLE_BINS) * 100) + "%";
+    updateScoreDisplay();
 
     if (!completed && visitedCount >= ANGLE_BINS) {
       finishRound();
@@ -232,13 +327,15 @@
     completed = true;
     playing = false;
 
-    var area = currentArea();
-    finalAreaEl.textContent = formatArea(area);
+    var kappa = areaCoefficient();
+    finalKappaEl.textContent = formatKappa(kappa);
+    compareMsgEl.textContent = compareMessage(kappa);
+    highlightCompareRow(kappa);
 
     var best = loadBest();
-    var isRecord = best === null || area < best;
+    var isRecord = best === null || kappa < best;
     if (isRecord) {
-      saveBest(area);
+      saveBest(kappa);
       updateBestDisplay();
       recordMsgEl.classList.remove("hidden");
     } else {
@@ -253,8 +350,8 @@
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
-    ctx.globalAlpha = 0.35;
-    ctx.drawImage(sweepCanvas, 0, 0, gridCols, gridRows, 0, 0, width, height);
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(sweepCanvas, 0, 0);
     ctx.restore();
 
     ctx.save();
