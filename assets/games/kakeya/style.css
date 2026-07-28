@@ -1,0 +1,172 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  background: #0c0f16;
+  color: #eef2ff;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.hud {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hud-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(12, 15, 22, 0.72);
+  backdrop-filter: blur(6px);
+  font-size: 0.8125rem;
+}
+
+.hud-row .label {
+  color: #8b97b8;
+}
+
+.hud-row .value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #c4f0ff;
+}
+
+.best-row .value {
+  color: #fbbf24;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 10, 16, 0.82);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  padding: 1rem;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.panel {
+  max-width: 22rem;
+  text-align: center;
+  padding: 1.75rem 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #161c2b 0%, #111622 100%);
+  border: 1px solid #2a3348;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.panel h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  letter-spacing: 0.04em;
+  color: #e8f4ff;
+}
+
+.subtitle {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  color: #6b7899;
+  letter-spacing: 0.08em;
+}
+
+.instructions {
+  margin: 0 0 0.75rem;
+  line-height: 1.65;
+  font-size: 0.9375rem;
+  color: #b8c4de;
+}
+
+.instructions strong {
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.tip {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  color: #6b7899;
+}
+
+.result {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  color: #b8c4de;
+}
+
+.result strong {
+  color: #7dd3fc;
+  font-size: 1.25rem;
+}
+
+.record-msg {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.record-msg.hidden {
+  display: none;
+}
+
+button {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0c1220;
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+@media (min-width: 640px) {
+  .hud {
+    top: 1rem;
+    left: 1rem;
+    right: auto;
+    flex-direction: column;
+  }
+}
