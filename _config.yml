@@ -36,7 +36,7 @@ defaults:
       type: games
     values:
       layout: game
-      fullscreen: false
+      game_mode: embedded
   - scope:
       path: ""
       type: site_pages

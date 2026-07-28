@@ -1,29 +1,98 @@
----
-layout: default
----
-<article class="game-page{% if page.fullscreen %} game-page--fullscreen{% endif %}">
-  {% unless page.fullscreen %}
-    <header class="game-header">
-      <h1>{{ page.title }}</h1>
-      {% if page.description %}
-        <p class="game-description">{{ page.description }}</p>
-      {% endif %}
-    </header>
+{% assign game_mode = page.game_mode | default: "embedded" %}
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'zh-CN' }}">
+<head>
+  {% if game_mode == "standalone" %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>{{ page.title | escape }}</title>
+    {% if page.description %}
+      <meta name="description" content="{{ page.description | escape }}">
+    {% endif %}
+    <style>
+      html,
+      body.game-standalone {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .game-standalone-frame {
+        display: block;
+        width: 100%;
+        height: 100dvh;
+        height: 100vh;
+        border: 0;
+      }
+
+      .game-standalone-content {
+        width: 100%;
+        min-height: 100dvh;
+        min-height: 100vh;
+      }
+    </style>
+  {% else %}
+    {% include head.html %}
+  {% endif %}
+</head>
+<body class="{% if game_mode == 'standalone' %}game-standalone{% else %}layout-default{% endif %}">
+  {% unless game_mode == "standalone" %}
+    {% include header.html %}
+    <main class="site-main container">
   {% endunless %}
 
-  {% if page.game_url %}
-    <div class="game-frame-wrapper">
+  {% if game_mode == "standalone" %}
+    {% if page.game_url %}
       <iframe
-        class="game-frame"
+        class="game-standalone-frame"
         src="{{ page.game_url | relative_url }}"
         title="{{ page.title | escape }}"
-        loading="lazy"
+        loading="eager"
+        allow="fullscreen; gamepad"
         allowfullscreen>
       </iframe>
-    </div>
+    {% else %}
+      <div class="game-standalone-content">
+        {{ content }}
+      </div>
+    {% endif %}
   {% else %}
-    <div class="game-content">
-      {{ content }}
-    </div>
+    <article class="game-page game-page--embedded">
+      <header class="game-header">
+        <h1>{{ page.title }}</h1>
+        {% if page.description %}
+          <p class="game-description">{{ page.description }}</p>
+        {% endif %}
+      </header>
+
+      {% if page.game_url %}
+        <div class="game-frame-wrapper">
+          <iframe
+            class="game-frame"
+            src="{{ page.game_url | relative_url }}"
+            title="{{ page.title | escape }}"
+            loading="lazy"
+            allowfullscreen>
+          </iframe>
+        </div>
+      {% endif %}
+
+      {% if content != "" %}
+        <div class="game-content">
+          {{ content }}
+        </div>
+      {% endif %}
+    </article>
   {% endif %}
-</article>
+
+  {% unless game_mode == "standalone" %}
+    </main>
+    {% include footer.html %}
+  {% endunless %}
+</body>
+</html>

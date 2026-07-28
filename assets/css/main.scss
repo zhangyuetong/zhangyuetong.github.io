@@ -281,16 +281,9 @@ a:hover {
   border: 0;
 }
 
-.game-page--fullscreen .site-main {
-  padding-block: var(--space-lg);
-}
-
-.game-page--fullscreen .game-frame-wrapper {
-  min-height: calc(100vh - 160px);
-}
-
-.game-page--fullscreen .game-frame {
-  min-height: calc(100vh - 160px);
+.game-content {
+  margin-top: var(--space-lg);
+  max-width: 720px;
 }
 
 @media (max-width: 640px) {

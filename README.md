@@ -56,12 +56,26 @@ $$
 title: My Game
 description: Short description for the card.
 game_url: /assets/games/my-game/index.html
-fullscreen: false
+game_mode: embedded
 ---
 Optional intro text shown above the iframe.
 ```
 
 3. Push to `main` — GitHub Actions deploys automatically.
+
+### Game display modes (`game_mode`)
+
+| Mode | Value | Behavior |
+|------|-------|----------|
+| Blog embedded | `embedded` (default) | Blog header/nav, title, description, game in a card iframe — looks like a site page |
+| Standalone | `standalone` | Full-screen game only — no blog header, nav, footer, or site styles; suitable for WeChat share links |
+
+Examples:
+
+- [`_games/demo-snake.md`](_games/demo-snake.md) — `game_mode: embedded`
+- [`_games/demo-snake-wechat.md`](_games/demo-snake-wechat.md) — `game_mode: standalone` (share `/games/demo-snake-wechat/` in WeChat)
+
+For WeChat, share the standalone entry URL (e.g. `https://g.zhenran.net/games/demo-snake-wechat/`). Users see only the game UI.
 
 ## Deployment
 
