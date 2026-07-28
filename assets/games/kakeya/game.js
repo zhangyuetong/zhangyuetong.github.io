@@ -48,6 +48,7 @@
   };
 
   var prevStick = null;
+  var stickActive = false;
 
   function normalizeDirected(angle) {
     return ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -139,6 +140,7 @@
     sweptCells = 0;
     completed = false;
     prevStick = null;
+    stickActive = false;
 
     sweepCtx.clearRect(0, 0, gridCols, gridRows);
 
@@ -203,11 +205,11 @@
     markLine(to.x1, to.y1, to.x2, to.y2);
   }
 
-  function markAngleBin(angle) {
-    var undirected = toUndirected(angle);
+  function markAngleBinUndirected(undirected) {
+    var u = ((undirected % Math.PI) + Math.PI) % Math.PI;
     var bin = Math.min(
       ANGLE_BINS - 1,
-      Math.floor((undirected / Math.PI) * ANGLE_BINS)
+      Math.floor((u / Math.PI) * ANGLE_BINS)
     );
     if (angleVisited[bin] === 0) {
       angleVisited[bin] = 1;
@@ -215,15 +217,13 @@
     }
   }
 
-  function markAngleArc(fromDirected, toDirected) {
-    var from = normalizeDirected(fromDirected);
-    var to = normalizeDirected(toDirected);
-    var delta = to - from;
+  function markAngleArc(uFrom, uTo) {
+    var delta = uTo - uFrom;
 
-    if (delta > Math.PI) {
-      delta -= Math.PI * 2;
-    } else if (delta < -Math.PI) {
-      delta += Math.PI * 2;
+    if (delta > Math.PI / 2) {
+      delta -= Math.PI;
+    } else if (delta < -Math.PI / 2) {
+      delta += Math.PI;
     }
 
     var step = Math.PI / ANGLE_BINS / 2;
@@ -231,7 +231,13 @@
 
     for (var i = 0; i <= steps; i++) {
       var t = i / steps;
-      markAngleBin(from + delta * t);
+      var u = uFrom + delta * t;
+      if (u < 0) {
+        u += Math.PI;
+      } else if (u >= Math.PI) {
+        u -= Math.PI;
+      }
+      markAngleBinUndirected(u);
     }
   }
 
@@ -274,8 +280,11 @@
     var pts = Array.from(pointers.values());
     var mx = (pts[0].x + pts[1].x) / 2;
     var my = (pts[0].y + pts[1].y) / 2;
-    var angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+    var angle = toUndirected(
+      Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x)
+    );
     var half = stickLength / 2;
+    var directed = angle;
 
     prevStick = {
       x1: stick.x1,
@@ -285,14 +294,20 @@
       angle: stick.angle
     };
 
-    stick.x1 = mx - Math.cos(angle) * half;
-    stick.y1 = my - Math.sin(angle) * half;
-    stick.x2 = mx + Math.cos(angle) * half;
-    stick.y2 = my + Math.sin(angle) * half;
+    stick.x1 = mx - Math.cos(directed) * half;
+    stick.y1 = my - Math.sin(directed) * half;
+    stick.x2 = mx + Math.cos(directed) * half;
+    stick.y2 = my + Math.sin(directed) * half;
     stick.angle = angle;
 
     markStickSweep(prevStick, stick);
-    markAngleArc(prevStick.angle, stick.angle);
+
+    if (stickActive) {
+      markAngleArc(prevStick.angle, stick.angle);
+    } else {
+      markAngleBinUndirected(stick.angle);
+      stickActive = true;
+    }
 
     updateScoreDisplay();
 
@@ -377,6 +392,9 @@
 
   function pointerUp(event) {
     pointers.delete(event.pointerId);
+    if (pointers.size < 2) {
+      stickActive = false;
+    }
     try {
       canvas.releasePointerCapture(event.pointerId);
     } catch (err) {
