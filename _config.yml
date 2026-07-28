@@ -1,0 +1,59 @@
+title: "Zhang Yuetong"
+description: "Personal blog with math notes and HTML mini-games."
+url: "https://g.zhenran.net"
+baseurl: ""
+
+author:
+  name: "Zhang Yuetong"
+
+lang: zh-CN
+timezone: Asia/Shanghai
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+permalink: /posts/:year/:month/:day/:title/
+
+collections:
+  games:
+    output: true
+    permalink: /games/:name/
+  site_pages:
+    output: true
+    permalink: /:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      math: true
+  - scope:
+      path: ""
+      type: games
+    values:
+      layout: game
+      fullscreen: false
+  - scope:
+      path: ""
+      type: site_pages
+    values:
+      layout: page
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - .github
+  - vendor
+
+sass:
+  style: compressed

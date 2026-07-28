@@ -1,0 +1,53 @@
+---
+layout: default
+---
+<section class="hero">
+  <h1>{{ site.title }}</h1>
+  <p class="hero-subtitle">{{ site.description }}</p>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>Latest Posts</h2>
+    <a class="section-link" href="{{ '/posts/' | relative_url }}">View all</a>
+  </div>
+  <div class="card-grid">
+    {% assign recent_posts = site.posts | slice: 0, 6 %}
+    {% if recent_posts.size > 0 %}
+      {% for post in recent_posts %}
+        {% include post-card.html post=post %}
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">No posts yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>Mini Games</h2>
+    <a class="section-link" href="{{ '/games/' | relative_url }}">View all</a>
+  </div>
+  <div class="card-grid">
+    {% assign recent_games = site.games %}
+    {% if recent_games.size > 0 %}
+      {% for game in recent_games limit: 6 %}
+        {% include game-card.html game=game %}
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">No games yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>About</h2>
+  </div>
+  <article class="card about-card">
+    <div class="card-body">
+      <p>A personal space for writing, math, and small interactive experiments.</p>
+      <a class="card-link" href="{{ '/about/' | relative_url }}">Learn more &rarr;</a>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,11 @@
+<article class="card game-card">
+  <div class="card-body">
+    <h3 class="card-title">
+      <a href="{{ include.game.url | relative_url }}">{{ include.game.title }}</a>
+    </h3>
+    {% if include.game.description %}
+      <p class="card-excerpt">{{ include.game.description }}</p>
+    {% endif %}
+    <a class="card-link" href="{{ include.game.url | relative_url }}">Play &rarr;</a>
+  </div>
+</article>

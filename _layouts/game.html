@@ -1,0 +1,29 @@
+---
+layout: default
+---
+<article class="game-page{% if page.fullscreen %} game-page--fullscreen{% endif %}">
+  {% unless page.fullscreen %}
+    <header class="game-header">
+      <h1>{{ page.title }}</h1>
+      {% if page.description %}
+        <p class="game-description">{{ page.description }}</p>
+      {% endif %}
+    </header>
+  {% endunless %}
+
+  {% if page.game_url %}
+    <div class="game-frame-wrapper">
+      <iframe
+        class="game-frame"
+        src="{{ page.game_url | relative_url }}"
+        title="{{ page.title | escape }}"
+        loading="lazy"
+        allowfullscreen>
+      </iframe>
+    </div>
+  {% else %}
+    <div class="game-content">
+      {{ content }}
+    </div>
+  {% endif %}
+</article>
